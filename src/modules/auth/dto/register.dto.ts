@@ -25,5 +25,5 @@ export class RegisterDTO {
     return new Date(value);
   })
   @IsDate()
-  dob: string;
+  dob: Date;
 }

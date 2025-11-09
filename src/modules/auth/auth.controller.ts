@@ -3,8 +3,8 @@ import { AuthService } from './auth.service';
 import { RegisterDTO } from './dto/register.dto';
 import { AuthFactoryService } from './factory/index';
 import { LoginDTO } from './dto/login.dto';
-import { success } from 'zod';
 import { ConfirmEmailDTO } from './dto/confirmEmail.dto';
+import { ForgetPasswordDTO } from './dto/forgetPassword.dto';
 
 @Controller('auth')
 export class AuthController {
@@ -38,4 +38,12 @@ export class AuthController {
     const token = await this.authService.login(loginDTO);
     return { message: 'Login successfully', success: true, data: { token } };
   }
+
+  @Post('forget-password')
+  async forgetPassword(@Body() forgetPasswordDTO: ForgetPasswordDTO) {
+    const customer = await this.authService.forgetPassword(forgetPasswordDTO);
+    return { message: 'otp send successfully', success: true, data: { customer } };
+  }
+
+ 
 }

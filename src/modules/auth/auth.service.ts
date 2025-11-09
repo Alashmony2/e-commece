@@ -6,12 +6,13 @@ import {
 } from '@nestjs/common';
 import { Customer } from './entities/auth.entity';
 import { CustomerRepository } from '@models/index';
-import { sendMail } from '@common/helpers';
+import { generateOTP, sendMail } from '@common/helpers';
 import { LoginDTO } from './dto/login.dto';
 import * as bcrypt from 'bcrypt';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import { ConfirmEmailDTO } from './dto/confirmEmail.dto';
+import { ForgetPasswordDTO } from './dto/forgetPassword.dto';
 
 @Injectable()
 export class AuthService {
@@ -50,7 +51,7 @@ export class AuthService {
     customerExist.isVerified = true;
     await this.customerRepository.update(
       { _id: customerExist._id },
-      { isVerified: true },
+      { isVerified: true, $unset: { otp: '', otpExpiry: '' } },
     );
     return customerExist;
   }
@@ -65,7 +66,8 @@ export class AuthService {
     );
     if (!customerExist) throw new UnauthorizedException('Invalid credentials');
     if (!match) throw new UnauthorizedException('Invalid credentials');
-    if (!customerExist.isVerified) throw new UnauthorizedException('Email not verified');
+    if (!customerExist.isVerified)
+      throw new UnauthorizedException('Email not verified');
     //generate token
     const token = this.jwtService.sign(
       {
@@ -76,5 +78,25 @@ export class AuthService {
       { secret: this.configService.get('access').jwt_secret, expiresIn: '1d' },
     );
     return token;
+  }
+
+  async forgetPassword(forgetPasswordDTO: ForgetPasswordDTO) {
+    const customerExist = await this.customerRepository.getOne({
+      email: forgetPasswordDTO.email,
+    });
+    if (!customerExist) throw new NotFoundException('Customer not found');
+    const otp = generateOTP();
+    const otpExpiry = new Date(Date.now() + 15 * 60 * 1000);
+    await this.customerRepository.update(
+      { _id: customerExist._id },
+      { otp, otpExpiry },
+    );
+    //send email
+    await sendMail({
+      to: forgetPasswordDTO.email,
+      subject: 'Reset password',
+      html: `<h1>your otp is ${otp}</h1>`,
+    });
+    return customerExist;
   }
 }

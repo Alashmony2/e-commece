@@ -5,6 +5,7 @@ import { AuthFactoryService } from './factory/index';
 import { LoginDTO } from './dto/login.dto';
 import { ConfirmEmailDTO } from './dto/confirmEmail.dto';
 import { ForgetPasswordDTO } from './dto/forgetPassword.dto';
+import { ResetPasswordDTO } from './dto/resetPassword.dto';
 
 @Controller('auth')
 export class AuthController {
@@ -45,5 +46,10 @@ export class AuthController {
     return { message: 'otp send successfully', success: true, data: { customer } };
   }
 
- 
+  @Post('reset-password')
+  async resetPassword(@Body() resetPasswordDTO: ResetPasswordDTO) {
+    const token = await this.authService.resetPassword(resetPasswordDTO);
+    return { message: 'Password reseted successfully', success: true, data: { token } };
+  }
+
 }

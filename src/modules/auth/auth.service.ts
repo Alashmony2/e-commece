@@ -13,6 +13,7 @@ import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import { ConfirmEmailDTO } from './dto/confirmEmail.dto';
 import { ForgetPasswordDTO } from './dto/forgetPassword.dto';
+import { ResetPasswordDTO } from './dto/resetPassword.dto';
 
 @Injectable()
 export class AuthService {
@@ -98,5 +99,34 @@ export class AuthService {
       html: `<h1>your otp is ${otp}</h1>`,
     });
     return customerExist;
+  }
+  async resetPassword(resetPassword: ResetPasswordDTO) {
+    const customerExist = await this.customerRepository.getOne({
+      email: resetPassword.email,
+    });
+    if (!customerExist) throw new NotFoundException('Customer not found');
+    if (customerExist.otp !== resetPassword.otp)
+      throw new UnauthorizedException('Invalid otp');
+    if (customerExist.otpExpiry < new Date())
+      throw new UnauthorizedException('Otp expired');
+    //hash password
+    const hashedPassword = await bcrypt.hash(resetPassword.newPassword, 10);
+    await this.customerRepository.update(
+      { _id: customerExist._id },
+      {
+        password: hashedPassword,
+        $unset: { otp: '', otpExpiry: '' },
+      },
+    );
+
+    const token = this.jwtService.sign(
+      {
+        _id: customerExist._id,
+        role: 'Customer',
+        email: customerExist.email,
+      },
+      { secret: this.configService.get('access').jwt_secret, expiresIn: '1d' },
+    );
+    return token;
   }
 }

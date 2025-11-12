@@ -170,4 +170,39 @@ export class AuthService {
 
     return { token, customer };
   }
+  
+  async googleLogin(idToken: string) {
+    const ticket = await this.googleClient.verifyIdToken({
+      idToken,
+      audience: this.configService.get('google_id'),
+    });
+  
+    const payload = ticket.getPayload();
+  
+    if (!payload || !payload.email) {
+      throw new UnauthorizedException('Invalid Google token');
+    }
+  
+    const customerExist = await this.customerRepository.getOne({
+      email: payload.email,
+    });
+  
+    if (!customerExist) {
+      throw new UnauthorizedException('User not found. Please register first.');
+    }
+  
+    const token = this.jwtService.sign(
+      {
+        _id: customerExist._id,
+        role: 'Customer',
+        email: customerExist.email,
+      },
+      { secret: this.configService.get('access').jwt_secret, expiresIn: '1d' },
+    );
+  
+    const customer = JSON.parse(JSON.stringify(customerExist));
+  
+    return { token, customer };
+  }
+  
 }

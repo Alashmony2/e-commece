@@ -72,4 +72,16 @@ export class AuthController {
       data: { token, customer },
     };
   }
+
+  @Post('google-login')
+  async googleLogin(@Body() googleAuthDTO: GoogleAuthDTO) {
+    const { token, customer } = await this.authService.googleLogin(
+      googleAuthDTO.idToken,
+    );
+    return {
+      message: 'Login with Google successfully',
+      success: true,
+      data: { token, customer },
+    };
+  }
 }

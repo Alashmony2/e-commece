@@ -5,10 +5,21 @@ import { Category, CategoryRepository, categorySchema } from '@models/index';
 import { MongooseModule } from '@nestjs/mongoose';
 import { CategoryFactoryService } from './factory';
 import { JwtService } from '@nestjs/jwt';
+import { UserMongoModule } from '@shared/index';
 
 @Module({
-  imports:[MongooseModule.forFeature([{name:Category.name,schema:categorySchema}])],
+  imports: [
+    UserMongoModule,
+    MongooseModule.forFeature([
+      { name: Category.name, schema: categorySchema },
+    ]),
+  ],
   controllers: [CategoryController],
-  providers: [CategoryService,CategoryRepository,CategoryFactoryService,JwtService],
+  providers: [
+    CategoryService,
+    CategoryRepository,
+    CategoryFactoryService,
+    JwtService,
+  ],
 })
 export class CategoryModule {}
